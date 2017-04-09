@@ -456,7 +456,7 @@ STPrint()
   {
     treeval = 0;
     fprintf(table, "%3d", i);
-    for (attr_num = NAME_ATTR; attr_num <= ARGNUM_ATTR; attr_num++)
+    for (attr_num = NAME_ATTR; attr_num <= ARGNUM_ATTR; attr_num++){
       if (attr_ptr = IsAttr(i, attr_num))
       {
 	attr_val = attrarray[attr_ptr].attr_val;
@@ -510,8 +510,10 @@ STPrint()
           break;
         }
       }
-      else
-	fprintf(table, "%11s", " ");
+      else{
+          fprintf(table, "%11s", " ");
+      }
+	 }
     fprintf(table, "\n");
     /* if (treeval!=0)
        printtree((tree)treeval, 0);*/
