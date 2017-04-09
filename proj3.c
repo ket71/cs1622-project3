@@ -46,8 +46,8 @@
 
    #include "proj2.h"
    #include "proj3.h" 
-/* #include "token.h" */
-#include <stdio.h> 
+   #include <stdlib.h>
+   #include <stdio.h> 
 
 
 /*********************************data structures**********************/
