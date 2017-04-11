@@ -529,15 +529,10 @@ int yycolumn, yyline;
 
 FILE *treelst;
 
-main()
-{
-  treelst = stdout;
-  yyparse();
-}
 
 yyerror(char *str)
 {
   printf("yyerror: %s at line %d\n", str, yyline);
-}
+} 
 
 #include "lex.yy.c"
