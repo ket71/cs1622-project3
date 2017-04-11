@@ -75,7 +75,6 @@ void analyze(tree root){
 	}else{
 		if(NodeOp(root) == ClassOp){
 			classOp(root);
-
 		}else if(NodeOp(root) == BodyOp){
 			bodyOp(root);
 		}else if(NodeOp(root) == DeclOp){
@@ -118,7 +117,7 @@ void bodyOp (tree root){
 		if(NodeOp(node) == DeclOp){
 			leftRec(root);
 		}else if(NodeOp(node) == MethodOp){
-			//method(node);
+			methodOp(node);
 		}else if (NodeOp(node) == StmtOp){
 			traverse(node);
 		}
@@ -126,6 +125,27 @@ void bodyOp (tree root){
 		if(NodeKind(root) == STRINGNode){
 			error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
 		}
+	}
+}
+
+void statement(tree root){
+	tree right = RightChild(root);
+	if(IsNull(right))
+		return;
+	if(NodeKind(right) == EXPRNode){
+		if(NodeOp(right) == AssignOp){
+			//assignOp(right);
+		}else if(NodeOp(right) == LoopOp){
+			//loopOp(right);
+		}else if(NodeOp(right) == IfElseOp){
+			//ifElseOp(right);
+		}else if(NodeOp(right) == RoutineCallOp){
+			//routineCallOp(right);
+		}else if(NodeOp(right) == ReturnOp){
+			//returnOp(right);
+		}
+	}else{
+		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
 	}
 }
 
@@ -161,6 +181,8 @@ void declOp(tree root){
 		//intVal to nSymInd ???
 	//type
 	//array
+	tree variableInt = RightChild(RightChild(right));
+	varInt(variableInt, nSymInd);
 }
 
 void varInt(tree root, int nSymInd){
@@ -169,15 +191,114 @@ void varInt(tree root, int nSymInd){
 	}
 	if(NodeKind(root) == EXPRNode){
 		if(NodeOp(root) != ArrayTypeOp){
-			//exp(root, nSymInd);
+			expression(root);
 		}else{
-			//array(root, nSymInd);
+			array(root, nSymInd);
 		}
 	}else{
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
 	}
 }
 
+void expression(tree root){
+	if(NodeKind(root) == EXPRNode){
+		if(NodeOp(root) == GTOp){
+			simpleExpression(LeftChild(root));
+			simpleExpression(RightChild(root));
+		}else{
+			simpleExpression(root);
+		}
+	}else{
+		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
+}
+
+void simpleExpression(tree root){
+	if(IsNull(root))
+		return;
+	if(NodeKind(root) == EXPRNode){
+		if(NodeOp(root) == UnaryNegOp){
+			term(LeftChild(root));
+		}else if(NodeKind(root) == OrOp){
+			simpleExpression(LeftChild(root));
+			term(RightChild(root));
+		}else{
+			term(root);
+		}
+	}else{
+		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
+}
+
+void term(tree root){
+	if(IsNull(root))
+		return;
+	if(NodeKind(root) == EXPRNode){
+		if(NodeOp(root) == AndOp){
+			term(LeftChild(root));
+			factor(RightChild(root));
+		}else{
+			factor(root);
+		}
+	}else{
+		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
+}
+
+void factor(tree root){
+	if(IsNull(root))
+		return;
+	if(NodeKind(root) == EXPRNode){
+		if(NodeOp(root) == VarOp){
+			//var(root);
+		}else if(NodeOp(root) == RoutineCallOp){
+			//routineCallOp(root);
+		}else{
+			expression(root);
+		}
+	}else{
+		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
+}
+
+void routineCallOp(tree root){
+	///
+}
+
+
+void argument(tree root){
+	///
+}
+
+int var(tree root){
+	
+}
+
+void array(tree root, int nSymInd){
+	tree initial = LeftChild(root);
+	if(IsNull(initial))
+		return;
+	if(NodeOp(initial) == CommaOp){
+		arrayInitialize(initial, nSymInd);
+	}else{
+		arrayCreate(initial, nSymInd);
+	}
+}
+
+void arrayInitialize(tree root, int nSymInd){
+	if(IsNull(root))
+		return;
+	arrayInitialize(LeftChild(root), nSymInd);
+	varInt(RightChild(root), nSymInd);
+}
+
+void arrayCreate(tree root, int nSymInd){
+	//add out of bounds error
+	traverse(root);
+}
+//return//loop
+//assignOp
+//ifElseOp
 int main(int argc, char* argv){
 	treelst = stdout;
 	yyparse();
