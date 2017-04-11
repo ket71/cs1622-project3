@@ -210,9 +210,12 @@ int type, action, id, seq;
     case TYPE_MIS:
 	printf("symbol %s: incorrect type usage.\n", getname(id));
 	break;
-  case MULTI_MAIN:
+	case MULTI_MAIN:
     printf("main() method already declared.\n");
     break;
+	case STRING_MIS:
+		printf("error message");
+		break;
     default:
 	printf("error type: %d.\n", type);
   }

@@ -36,6 +36,7 @@
 #define NOT_TYPE 122
 #define ARR_DIME_MIS 123
 #define MULTI_MAIN 124
+#define STRING_MIS 125
 
 /*
  * processing instruction for error reporting routine 
