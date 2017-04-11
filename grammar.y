@@ -28,6 +28,7 @@
 Program						:	PROGRAMnum IDnum SEMInum ClassDecl_recursive
 								{  
 									$$ = MakeTree(ProgramOp, $4, MakeLeaf(IDNode, $2)); 
+									root = $$;
 									printtree($$, 0);
 								};
 /* ClassDecl */								
@@ -528,6 +529,7 @@ Variable_expression			:	Expression
 int yycolumn, yyline;
 
 FILE *treelst;
+
 
 
 yyerror(char *str)
