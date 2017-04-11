@@ -80,9 +80,9 @@ void analyze(tree root){
 		}else if(NodeOp(root) == DeclOp){
 			declOp(root);
 		}else if(NodeOp(root) == BoundOp){
-			expression(root);
+			expression(RightChild(root));
 		}else if(NodeOp(root) == CommaOp){
-			expression(root);
+			expression(LeftChild(root));
 		}else if(NodeOp(root) == StmtOp){
 			statement(root);
 		}else if(NodeOp(root) == RArgTypeOp || NodeOp(root) == VArgTypeOp){
@@ -122,7 +122,7 @@ void bodyOp (tree root){
 	//if node is not leaf
 	if(NodeKind(node) == EXPRNode){
 		if(NodeOp(node) == DeclOp){
-			leftRec(root);
+			leftRec(node);
 		}else if(NodeOp(node) == MethodOp){
 			methodOp(node);
 		}else if (NodeOp(node) == StmtOp){
@@ -191,7 +191,7 @@ void declOp(tree root){
 	tree right = RightChild(root);
 	//variable name
 	tree varName = LeftChild(right);
-	//insert variable
+	//insert variable into symbolTable
 	int nSymInd = InsertEntry(IntVal(varName));
 	if(nSymInd == 0)
 		return;
@@ -224,10 +224,11 @@ void varInt(tree root, int nSymInd){
 		return;
 	}
 	if(NodeKind(root) == EXPRNode){
-		if(NodeOp(root) != ArrayTypeOp){
-			expression(root);
-		}else{
+		if(NodeOp(root) == ArrayTypeOp){
 			array(root, nSymInd); // add dimension parameter?
+			
+		}else{
+			expression(root);
 		}
 	}else{
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
@@ -308,7 +309,7 @@ void routineCallOp(tree root){
 		outputMethod = 1; // do not know what this does
 	}
 	*/
-	if(GetAttr(varName,KIND_ATTR) == PROCE || GetAttr(varName, KIND_ATTR) == FUNC){
+	if(GetAttr(varName,KIND_ATTR) != PROCE && GetAttr(varName, KIND_ATTR) != FUNC){
 		error_msg(PROCE_MISMATCH, CONTINUE, GetAttr(varName, NAME_ATTR), 0);
 		return;
 	}
@@ -357,16 +358,15 @@ int var(tree root){
 				expression(LeftChild(LeftChild(right)));
 			}
 			//if fieldOp?
-			if(IsAttr(nSymInd, KIND_ATTR)){
+		}
+		if(IsAttr(nSymInd, KIND_ATTR)){
 				if(GetAttr(nSymInd, KIND_ATTR) == ARR){
 					error_msg(INDX_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
 				}
-			}
 		}
 		return nSymInd;
-	}else{
+	}else
 		return;
-	}
 }
 
 //analyze array
@@ -426,7 +426,8 @@ void ifElseOp(tree root){
 	if(NodeOp(RightChild(root)) == CommaOp){
 		expression(LeftChild(RightChild(root)));
 		traverse_recursive(RightChild(RightChild(root)));
-	}else if(NodeOp(RightChild(root)) == StmtOp)
+	}
+	if(NodeOp(RightChild(root)) == StmtOp)
 		traverse_recursive(RightChild(root));
 }
 
@@ -437,5 +438,8 @@ int main(int argc, char* argv){
 	STInit();
 	traverse();
 	STPrint();
+	
+	printtree(root,0);
+	
 	
 } 
