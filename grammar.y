@@ -27,7 +27,7 @@
 /* Program */
 Program						:	PROGRAMnum IDnum SEMInum ClassDecl_recursive
 								{  
-									$$ = MakeTree(ProgramOp, $4, MakeLeaf(IDNode, $2)); 
+									$$ = MakeTree(ProgramOp, $4, MakeLeaf(STNode, $2)); 
 									root = $$;
 								};
 /* ClassDecl */								
@@ -41,7 +41,7 @@ ClassDecl_recursive   		:	ClassDecl
 								};
 ClassDecl 					:	CLASSnum IDnum ClassBody
 								{
-									$$ = MakeTree(ClassDefOp, $3, MakeLeaf(IDNode, $2));
+									$$ = MakeTree(ClassDefOp, $3, MakeLeaf(STNode, $2));
 								}; 
 /* ClassBody */
 ClassBody					:	LBRACEnum Decls ClassBody_MethodDecl RBRACEnum
@@ -115,11 +115,11 @@ FieldDeclID					:	VariableDeclID
 /* VariableDeclID */
 VariableDeclID				:	IDnum
 								{
-									$$ = MakeLeaf(IDNode, $1);
+									$$ = MakeLeaf(STNode, $1);
 								}
 							|	IDnum VariableDeclID_recursive
 								{
-									$$ = MakeLeaf(IDNode, $1);
+									$$ = MakeLeaf(STNode, $1);
 								};
 VariableDeclID_recursive	:	LBRACnum RBRACnum
 								{
@@ -175,12 +175,12 @@ ArrayExpression				:	LBRACnum Expression RBRACnum
 /* MethodDecl */
 MethodDecl					:	METHODnum Type IDnum LPARENnum FormalParameterList RPARENnum Block
 								{
-									tree headOp = MakeTree(HeadOp, MakeLeaf(IDNode, $3), $5);
+									tree headOp = MakeTree(HeadOp, MakeLeaf(STNode, $3), $5);
 									$$ = MakeTree(MethodOp, headOp, $7);
 								}
 							|	METHODnum VOIDnum {type_tree = NullExp();} IDnum LPARENnum FormalParameterList RPARENnum Block
 								{
-									tree headOp = MakeTree(HeadOp, MakeLeaf(IDNode, $4), $6);
+									tree headOp = MakeTree(HeadOp, MakeLeaf(STNode, $4), $6);
 									$$ = MakeTree(MethodOp, headOp, $8);
 								};
 /* FormalParameterList */
@@ -210,12 +210,12 @@ FormalParameter				:	VALnum INTnum FormalParameter_recursive
 								};
 FormalParameter_recursive	:	IDnum 	
 								{
-									tree idTree = MakeTree(CommaOp, MakeLeaf(IDNode, $1), MakeLeaf(INTEGERTNode, 0));
+									tree idTree = MakeTree(CommaOp, MakeLeaf(STNode, $1), MakeLeaf(INTEGERTNode, 0));
 									$$ = MakeTree(RArgTypeOp, idTree, NullExp());
 								}
 							|	IDnum COMMAnum FormalParameter_recursive
 								{
-									tree idTree = MakeTree(CommaOp, MakeLeaf(IDNode, $1), MakeLeaf(INTEGERTNode, 0));
+									tree idTree = MakeTree(CommaOp, MakeLeaf(STNode, $1), MakeLeaf(INTEGERTNode, 0));
 									tree formalParameter = MakeTree(RArgTypeOp, idTree, NullExp());
 									$$ = MkRightC($3, formalParameter);
 								};
@@ -231,7 +231,7 @@ Block						:	StatementList
 /* Type */
 Type						:	IDnum Type_recursive
 								{
-									$$ = type_tree = MakeTree(TypeIdOp, MakeLeaf(IDNode, $1), $2);
+									$$ = type_tree = MakeTree(TypeIdOp, MakeLeaf(STNode, $1), $2);
 								}
 							|	INTnum Type_recursive
 								{
@@ -239,7 +239,7 @@ Type						:	IDnum Type_recursive
 								}
 							|	IDnum Type_recursive DOTnum Type
 								{
-									tree typeTree = MakeTree(TypeIdOp, MakeLeaf(IDNode, $1), $2);
+									tree typeTree = MakeTree(TypeIdOp, MakeLeaf(STNode, $1), $2);
 									tree fieldTree = MakeTree(FieldOp, $4, NullExp());
 									$$ = type_tree = MkRightC(fieldTree, typeTree); 
 								}
@@ -500,7 +500,7 @@ UnsignedConstant			:	ICONSTnum
 /* Variable */
 Variable					:	IDnum Variable_recursive
 								{
-									$$ = MakeTree(VarOp, MakeLeaf(IDNode, $1), $2);
+									$$ = MakeTree(VarOp, MakeLeaf(STNode, $1), $2);
 								};
 Variable_recursive 			:	/* Epsilon */
 								{
@@ -512,7 +512,7 @@ Variable_recursive 			:	/* Epsilon */
 								}
 							|	DOTnum IDnum Variable_recursive
 								{
-									tree dot = MakeTree(FieldOp, MakeLeaf(IDNode, $2), NullExp());
+									tree dot = MakeTree(FieldOp, MakeLeaf(STNode, $2), NullExp());
 									$$ = MakeTree(SelectOp, dot, $3);
 								};
 Variable_expression			:	Expression

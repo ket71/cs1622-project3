@@ -171,6 +171,13 @@ tree T;
 	return (T->IntVal);
 }
 
+setIntVal(T, val)
+tree T;
+int val;
+{
+	T->IntVal = val;
+}
+
 /********************************************************
 * 	This function return true if the node is 	*
 *	DUMMYNode, false otherwise.			*

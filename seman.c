@@ -5,13 +5,7 @@ Problems:
 
 -undeclared symbol error needs to be implemented
 
--array kinds are being labeled as variables
-
--need to fix error messages
-
--need to implement dimension error
-
--need to implement argnum
+-need to fix error messages // this might already be fixed
 
 -parameter variables are not working (Ex4)
 
@@ -75,7 +69,7 @@ void leftRec(tree root){
 		return;
 	}
 	analyze(root);
-	leftRec(LeftChild(root)); //order can be wrong
+	leftRec(LeftChild(root));
 }
 
 /* Process right recursive*/
@@ -84,7 +78,7 @@ void rightRec(tree root){
 		return;
 	}
 	analyze(root);
-	rightRec(RightChild(root)); //order can be wrong
+	rightRec(RightChild(root)); 
 }
 
 /*	Calls different functions based on root node kind/op	*/
@@ -122,10 +116,7 @@ void classOp (tree root){
 			// Insert class
 			int nSymInd = InsertEntry(IntVal(class));
 			SetAttr(nSymInd, KIND_ATTR, CLASS);
-			/*
-			setNodeKind(class, STNode);
 			setIntVal(class, nSymInd);
-			*/
 			
 			OpenBlock();
 			traverse_recursive(node);
@@ -174,7 +165,9 @@ void statement(tree root){
 			returnOp(right);
 		}
 	}else{
+		if(NodeKind(root) == STRINGNode){
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
 	}
 }
 
@@ -186,10 +179,7 @@ void methodOp(tree root){
 	int nSymInd = InsertEntry(IntVal(name));
 	if(nSymInd == -1)
 		return;
-	/*
-	setNodeKind(name, STNode);
 	setIntVal(name, nSymInd);
-	*/
 	tree type = RightChild(RightChild(left));
 	if(IsNull(type)){
 		SetAttr(nSymInd, KIND_ATTR, PROCE);
@@ -197,12 +187,19 @@ void methodOp(tree root){
 		SetAttr(nSymInd, KIND_ATTR, FUNC);
 		SetAttr(nSymInd, TYPE_ATTR, type); /* (uintptr_t) */
 	}
+	int argNum = countArgs(LeftChild(RightChild(LeftChild(root))));
+	SetAttr(nSymInd, ARGNUM_ATTR, argNum);
 	OpenBlock();
-	//keep track of number of args? count args function?
 	rightRec(LeftChild(RightChild(left)));
 	traverse_recursive(RightChild(root));
 	CloseBlock();
 	
+}
+
+int countArgs(tree root){
+	if(IsNull(root))
+		return 0;
+	return countArgs(RightChild(root)) + 1;
 }
 
 //analyze declOp
@@ -216,27 +213,31 @@ void declOp(tree root){
 		return;
 	//variable attributes
 	SetAttr(nSymInd, KIND_ATTR, VAR);
-	/*
-	setNodeKind(name, STNode);
-	setIntVal(name, nSymInd);
-	*/
+	setIntVal(varName, nSymInd);
 	//variable type
 	tree type = LeftChild(RightChild(right));
 	SetAttr(nSymInd, TYPE_ATTR, type); /* uintptr_t */
-	/*
-	if(NodeKind(type) == IDNode){
-		int typeIndex = IntVal(type);
-		int typeSymInd = LookUp(typeIndex);
-		setNodeKind(type, STNode);
+	
+	if(NodeKind(type) == STNode){
+		int typeSymInd = LookUp(IntVal(type));
 		setIntVal(type, typeSymInd);
 	}
-	*/
-	// Count dimensions function
-	// for array
+	
+	int dimension = dimensions(RightChild(type));
+	if(dimension != 0){
+		SetAttr(nSymInd, KIND_ATTR, ARR);
+		SetAttr(nSymInd, DIMEN_ATTR, dimension);
+	}
+
 	tree variableInt = RightChild(RightChild(right));
 	varInt(variableInt, nSymInd);
 }
 
+int dimensions(tree root){
+	if(IsNull(root))
+		return;
+	return dimensions(RightChild(root)) + 1;	
+	}
 //variable initialization
 void varInt(tree root, int nSymInd){
 	if(IsNull(root)){
@@ -250,7 +251,9 @@ void varInt(tree root, int nSymInd){
 			expression(root);
 		}
 	}else{
+		if(NodeKind(root) == STRINGNode){
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
 	}
 }
 
@@ -265,7 +268,9 @@ void expression(tree root){
 			simpleExpression(root);
 		}
 	}else{
+		if(NodeKind(root) == STRINGNode){
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
 	}
 }
 
@@ -282,7 +287,9 @@ void simpleExpression(tree root){
 			term(root);
 		}
 	}else{
+		if(NodeKind(root) == STRINGNode){
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
 	}
 }
 
@@ -297,7 +304,9 @@ void term(tree root){
 			factor(root);
 		}
 	}else{
+		if(NodeKind(root) == STRINGNode){
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
 	}
 }
 
@@ -313,7 +322,9 @@ void factor(tree root){
 			expression(root);
 		}
 	}else{
+		if(NodeKind(root) == STRINGNode){
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
+	}
 	}
 }
 
@@ -357,65 +368,74 @@ void argument(tree root){
 
 //return index of variable in symbolTable
 int var(tree root){
-	if(NodeKind(root) == EXPRNode){
-		tree varName = LeftChild(root);
-		int nSymInd = LookUp(IntVal(varName));
-		if(nSymInd == 0)
-			return 0;
-		// set node kind?
-		//int index = findClass(nSymInd);
-		tree right = RightChild(root);
-		while(!IsNull(right)){
-			if(NodeOp(LeftChild(right)) == IndexOp){
-				if(IsAttr(nSymInd, KIND_ATTR)){
-					if(GetAttr(nSymInd, KIND_ATTR) != ARR){
-						error_msg(ARR_TYPE_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
-						right = RightChild(right);
-						continue;
-					}
-				}
-				expression(LeftChild(LeftChild(right)));
-			}
-			//if fieldOp?
-		}
-		if(IsAttr(nSymInd, KIND_ATTR)){
-				if(GetAttr(nSymInd, KIND_ATTR) == ARR){
-					error_msg(INDX_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
-				}
-		}
-		return nSymInd;
-	}else
+	if(NodeKind(root) != EXPRNode)
 		return;
+	tree varName = LeftChild(root);
+	int nSymInd = LookUp(IntVal(varName)); //this should be detecting undeclared but it is not
+	if(nSymInd == 0)
+		return 0;
+	// set node kind?
+	//int index = findClass(nSymInd);
+	setIntVal(varName,nSymInd);
+	tree right = RightChild(root);
+	while(!IsNull(right)){
+		if(NodeOp(LeftChild(right)) == IndexOp){
+			if(IsAttr(nSymInd, KIND_ATTR)){
+				if(GetAttr(nSymInd, KIND_ATTR) != ARR){
+					error_msg(ARR_TYPE_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
+					right = RightChild(right);
+					continue;
+				}
+			}
+			expression(LeftChild(LeftChild(right)));
+		}
+		//if fieldOp?
+	}
+	if(IsAttr(nSymInd, KIND_ATTR)){
+			if(GetAttr(nSymInd, KIND_ATTR) == ARR){
+				error_msg(INDX_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
+			}
+	}
+	return nSymInd;
 }
 
 //analyze array
-void array(tree root, int nSymInd){
+void array(tree root, int dimension, int nSymInd){
 	//start of array
 	tree initial = LeftChild(root);
 	if(IsNull(initial))
 		return;
 	//array initialization
 	if(NodeOp(initial) == CommaOp){
-		arrayInitialize(initial, nSymInd);
+		arrayInitialize(initial, dimension, nSymInd);
 	}else{
 		//array creation
-		arrayCreate(initial, nSymInd);
+		arrayCreate(initial, dimension, nSymInd);
 	}
 }
 
 //array initialization
-void arrayInitialize(tree root, int nSymInd){
+void arrayInitialize(tree root, int dimension, int nSymInd){
 	if(IsNull(root))
 		return;
-	arrayInitialize(LeftChild(root), nSymInd);
+	arrayInitialize(LeftChild(root), dimension, nSymInd);
 	varInt(RightChild(root), nSymInd);
 }
 
 //array creation
-void arrayCreate(tree root, int nSymInd){
-	//add out of bounds error
-	//dimensions?
+void arrayCreate(tree root,int dimension, int nSymInd){
+	//dimensions error
+	int dim = countDimensions(root);
+	if(dimension != dimensions){
+		error_msg(INDX_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
+	}
 	traverse_recursive(root);
+}
+
+int countDimensions(tree root){
+	if(IsNull(root))
+		return 0;
+	return countDimensions(LeftChild(root)) + 1;
 }
 
 //analyze returnOp
