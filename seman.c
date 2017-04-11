@@ -1,3 +1,22 @@
+/*
+Problems:
+
+-main is currently not inserted into the symbol table
+
+-undeclared symbol error needs to be implemented
+
+-array kinds are being labeled as variables
+
+-need to fix error messages
+
+-need to implement dimension error
+
+-need to implement argnum
+
+-parameter variables are not working (Ex4)
+
+-need to handle redeclaration (Ex5) //Still Seg Faults
+*/
 #include "proj2.h"
 #include "proj3.h"
 #include <stdio.h>
