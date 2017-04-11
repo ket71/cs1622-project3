@@ -100,9 +100,12 @@ void analyze(tree root){
 			statement(root);
 		}else if(NodeOp(root) == RArgTypeOp || NodeOp(root) == VArgTypeOp){
 			argument(root);
+		}else{
+			printf(NodeOp(root) + "////////////////////////////////////////////////////");
 		}
 	}
 }
+
 
 // analyze classOp
 void classOp (tree root){
@@ -235,7 +238,7 @@ void declOp(tree root){
 
 int dimensions(tree root){
 	if(IsNull(root))
-		return;
+		return 0;
 	return dimensions(RightChild(root)) + 1;	
 	}
 //variable initialization
