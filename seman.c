@@ -71,7 +71,7 @@ void rightRec(tree root){
 /*	Calls different functions based on root node kind/op	*/
 void analyze(tree root){
 	if(NodeKind(root) == STRINGNode){
-
+		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
 	}else{
 		if(NodeOp(root) == ClassOp){
 			classOp(root);
@@ -80,46 +80,53 @@ void analyze(tree root){
 		}else if(NodeOp(root) == DeclOp){
 			declOp(root);
 		}else if(NodeOp(root) == BoundOp){
-			//expression(root);
-			
+			expression(root);
 		}else if(NodeOp(root) == CommaOp){
-			//expression(root);
-			
+			expression(root);
 		}else if(NodeOp(root) == StmtOp){
-			//statement(root);
+			statement(root);
 		}else if(NodeOp(root) == RArgTypeOp || NodeOp(root) == VArgTypeOp){
-			//argument(root);
+			argument(root);
 		}
 	}
 }
 
+// analyze classOp
 void classOp (tree root){
 	tree node = RightChild(root);
-	//if ClassDefOp node is not a leaf
+	//if node is not a leaf
 	if(NodeKind(node) == EXPRNode){
-		tree class = RightChild(node);
-		if(NodeKind(class) == EXPRNode)
-			return;
-		int nSymInd = InsertEntry(IntVal(class));
-		SetAttr(nSymInd, KIND_ATTR, CLASS);
-		//STNode ???
-		//intVal to nSymInd ???
-		OpenBlock();
-		traverse(node);
-		CloseBlock();
+		if(NodeOp(node) == ClassDefOp){
+			tree class = RightChild(node);
+			if(NodeKind(class) == EXPRNode)
+				return;
+			// Insert class
+			int nSymInd = InsertEntry(IntVal(class));
+			SetAttr(nSymInd, KIND_ATTR, CLASS);
+			/*
+			setNodeKind(class, STNode);
+			setIntVal(class, nSymInd);
+			*/
+			
+			OpenBlock();
+			traverse_recursive(node);
+			CloseBlock();
+		}
 	}
 	
 }
 
+//analyze bodyOp
 void bodyOp (tree root){
 	tree node = RightChild(root);
+	//if node is not leaf
 	if(NodeKind(node) == EXPRNode){
 		if(NodeOp(node) == DeclOp){
 			leftRec(root);
 		}else if(NodeOp(node) == MethodOp){
 			methodOp(node);
 		}else if (NodeOp(node) == StmtOp){
-			traverse(node);
+			traverse_recursive(node);
 		}
 	}else{
 		if(NodeKind(root) == STRINGNode){
@@ -128,63 +135,90 @@ void bodyOp (tree root){
 	}
 }
 
+//analyze statement
 void statement(tree root){
 	tree right = RightChild(root);
+	//if node is null
 	if(IsNull(right))
 		return;
+	//if node is not leaf
 	if(NodeKind(right) == EXPRNode){
 		if(NodeOp(right) == AssignOp){
-			//assignOp(right);
+			assignOp(right);
 		}else if(NodeOp(right) == LoopOp){
-			//loopOp(right);
+			loopOp(right);
 		}else if(NodeOp(right) == IfElseOp){
-			//ifElseOp(right);
+			ifElseOp(right);
 		}else if(NodeOp(right) == RoutineCallOp){
-			//routineCallOp(right);
+			routineCallOp(right);
 		}else if(NodeOp(right) == ReturnOp){
-			//returnOp(right);
+			returnOp(right);
 		}
 	}else{
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
 	}
 }
 
+//analyze method
 void methodOp(tree root){
 	tree left = LeftChild(root);
+	//get method name
 	tree name = LeftChild(left);
 	int nSymInd = InsertEntry(IntVal(name));
-	//set node kind and int val?
+	if(nSymInd == -1)
+		return;
+	/*
+	setNodeKind(name, STNode);
+	setIntVal(name, nSymInd);
+	*/
 	tree type = RightChild(RightChild(left));
 	if(IsNull(type)){
 		SetAttr(nSymInd, KIND_ATTR, PROCE);
 	}else{
 		SetAttr(nSymInd, KIND_ATTR, FUNC);
-		SetAttr(nSymInd, TYPE_ATTR, type);
+		SetAttr(nSymInd, TYPE_ATTR, type); /* (uintptr_t) */
 	}
 	OpenBlock();
-	//keep track of number of args?
+	//keep track of number of args? count args function?
 	rightRec(LeftChild(RightChild(left)));
-	traverse(RightChild(root));
+	traverse_recursive(RightChild(root));
 	CloseBlock();
 	
 }
 
+//analyze declOp
 void declOp(tree root){
 	tree right = RightChild(root);
+	//variable name
 	tree varName = LeftChild(right);
+	//insert variable
 	int nSymInd = InsertEntry(IntVal(varName));
+	if(nSymInd == 0)
+		return;
+	//variable attributes
 	SetAttr(nSymInd, KIND_ATTR, VAR);
+	/*
+	setNodeKind(name, STNode);
+	setIntVal(name, nSymInd);
+	*/
+	//variable type
 	tree type = LeftChild(RightChild(right));
-	SetAttr(nSymInd, TYPE_ATTR, type);
-	//varInt(); varInt, nSymInd
-	//STNode ???
-		//intVal to nSymInd ???
-	//type
-	//array
+	SetAttr(nSymInd, TYPE_ATTR, type); /* uintptr_t */
+	/*
+	if(NodeKind(type) == IDNode){
+		int typeIndex = IntVal(type);
+		int typeSymInd = LookUp(typeIndex);
+		setNodeKind(type, STNode);
+		setIntVal(type, typeSymInd);
+	}
+	*/
+	// Count dimensions function
+	// for array
 	tree variableInt = RightChild(RightChild(right));
 	varInt(variableInt, nSymInd);
 }
 
+//variable initialization
 void varInt(tree root, int nSymInd){
 	if(IsNull(root)){
 		return;
@@ -193,7 +227,7 @@ void varInt(tree root, int nSymInd){
 		if(NodeOp(root) != ArrayTypeOp){
 			expression(root);
 		}else{
-			array(root, nSymInd);
+			array(root, nSymInd); // add dimension parameter?
 		}
 	}else{
 		error_msg(STRING_MIS, CONTINUE, IntVal(root), 0);
@@ -201,7 +235,9 @@ void varInt(tree root, int nSymInd){
 }
 
 void expression(tree root){
-	if(NodeKind(root) == EXPRNode){
+	if(IsNull(root))
+		return;
+	if(NodeKind(root) == EXPRNode){ //possibly add empty if statements for other compare ops
 		if(NodeOp(root) == GTOp){
 			simpleExpression(LeftChild(root));
 			simpleExpression(RightChild(root));
@@ -216,7 +252,7 @@ void expression(tree root){
 void simpleExpression(tree root){
 	if(IsNull(root))
 		return;
-	if(NodeKind(root) == EXPRNode){
+	if(NodeKind(root) == EXPRNode){ //possibly add empty if statements for addops and sub ops
 		if(NodeOp(root) == UnaryNegOp){
 			term(LeftChild(root));
 		}else if(NodeKind(root) == OrOp){
@@ -233,7 +269,7 @@ void simpleExpression(tree root){
 void term(tree root){
 	if(IsNull(root))
 		return;
-	if(NodeKind(root) == EXPRNode){
+	if(NodeKind(root) == EXPRNode){ // possibly add empty if statements for mult and div
 		if(NodeOp(root) == AndOp){
 			term(LeftChild(root));
 			factor(RightChild(root));
@@ -250,9 +286,9 @@ void factor(tree root){
 		return;
 	if(NodeKind(root) == EXPRNode){
 		if(NodeOp(root) == VarOp){
-			//var(root);
+			var(root);
 		}else if(NodeOp(root) == RoutineCallOp){
-			//routineCallOp(root);
+			routineCallOp(root);
 		}else{
 			expression(root);
 		}
@@ -262,29 +298,93 @@ void factor(tree root){
 }
 
 void routineCallOp(tree root){
-	///
+	tree left = LeftChild(root);
+	int varName = var(left);
+	if(varName == 0)
+		return;
+	//output method?
+	/*
+	if(!strcmp(getname(GetAttr(varName,NAME_ATTR)), "println")){
+		outputMethod = 1; // do not know what this does
+	}
+	*/
+	if(GetAttr(varName,KIND_ATTR) == PROCE || GetAttr(varName, KIND_ATTR) == FUNC){
+		error_msg(PROCE_MISMATCH, CONTINUE, GetAttr(varName, NAME_ATTR), 0);
+		return;
+	}
+	//check arguments? count dimensions
+	rightRec(RightChild(root));
 }
 
 
 void argument(tree root){
-	///
+	tree left = LeftChild(root);
+	tree name = LeftChild(left);
+	tree type = RightChild(left);
+	int nSymInd = InsertEntry(IntVal(name));
+	if(NodeOp(root) == RArgTypeOp){
+		SetAttr(nSymInd, KIND_ATTR, REF_ARG);
+	}else{
+		SetAttr(nSymInd, KIND_ATTR, VALUE_ARG);
+	}
+	SetAttr(nSymInd, TYPE_ATTR, type);
+	//set node kind?
+	/*
+	setNodeKind(name, STNode);
+	setIntVal(name, nSymInd);
+	*/
 }
 
+//return index of variable in symbolTable
 int var(tree root){
-	
+	if(NodeKind(root) == EXPRNode){
+		tree varName = LeftChild(root);
+		int nSymInd = LookUp(IntVal(varName));
+		if(nSymInd == 0)
+			return 0;
+		// set node kind?
+		//int index = findClass(nSymInd);
+		tree right = RightChild(root);
+		while(!IsNull(right)){
+			if(NodeOp(LeftChild(right)) == IndexOp){
+				if(IsAttr(nSymInd, KIND_ATTR)){
+					if(GetAttr(nSymInd, KIND_ATTR) != ARR){
+						error_msg(ARR_TYPE_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
+						right = RightChild(right);
+						continue;
+					}
+				}
+				expression(LeftChild(LeftChild(right)));
+			}
+			//if fieldOp?
+			if(IsAttr(nSymInd, KIND_ATTR)){
+				if(GetAttr(nSymInd, KIND_ATTR) == ARR){
+					error_msg(INDX_MIS, CONTINUE, GetAttr(nSymInd, NAME_ATTR), 0);
+				}
+			}
+		}
+		return nSymInd;
+	}else{
+		return;
+	}
 }
 
+//analyze array
 void array(tree root, int nSymInd){
+	//start of array
 	tree initial = LeftChild(root);
 	if(IsNull(initial))
 		return;
+	//array initialization
 	if(NodeOp(initial) == CommaOp){
 		arrayInitialize(initial, nSymInd);
 	}else{
+		//array creation
 		arrayCreate(initial, nSymInd);
 	}
 }
 
+//array initialization
 void arrayInitialize(tree root, int nSymInd){
 	if(IsNull(root))
 		return;
@@ -292,13 +392,44 @@ void arrayInitialize(tree root, int nSymInd){
 	varInt(RightChild(root), nSymInd);
 }
 
+//array creation
 void arrayCreate(tree root, int nSymInd){
 	//add out of bounds error
-	traverse(root);
+	//dimensions?
+	traverse_recursive(root);
 }
-//return//loop
-//assignOp
-//ifElseOp
+
+//analyze returnOp
+void returnOp(tree root){
+	expression(LeftChild(root));
+}
+
+//analyze loopOp
+void loopOp(tree root){
+	expression(LeftChild(root));
+	traverse_recursive(RightChild(root));
+}
+
+//analyze assignOp
+void assignOp(tree root){
+	tree variable = RightChild(LeftChild(root));
+	var(variable);
+	tree right = RightChild(root);
+	expression(right);
+}
+
+//analyze ifElseOp
+void ifElseOp(tree root){
+	if(IsNull(root))
+		return;
+	ifElseOp(LeftChild(root));
+	if(NodeOp(RightChild(root)) == CommaOp){
+		expression(LeftChild(RightChild(root)));
+		traverse_recursive(RightChild(RightChild(root)));
+	}else if(NodeOp(RightChild(root)) == StmtOp)
+		traverse_recursive(RightChild(root));
+}
+
 int main(int argc, char* argv){
 	treelst = stdout;
 	yyparse();
