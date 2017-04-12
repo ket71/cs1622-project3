@@ -101,7 +101,7 @@ void analyze(tree root){
 		}else if(NodeOp(root) == RArgTypeOp || NodeOp(root) == VArgTypeOp){
 			argument(root);
 		}else{
-			printf(NodeOp(root) + "////////////////////////////////////////////////////");
+			//printf(NodeOp(root) + "////////////////////////////////////////////////////");
 		}
 	}
 }
@@ -408,7 +408,7 @@ void array(tree root, int dimension, int nSymInd){
 	tree initial = LeftChild(root);
 	if(IsNull(initial))
 		return;
-	//array initialization
+	//array initialization 
 	if(NodeOp(initial) == CommaOp){
 		arrayInitialize(initial, dimension, nSymInd);
 	}else{
